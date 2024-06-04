@@ -1,2 +1,3 @@
 # FFT-Hydrodynamic-sensing
-This code is a fft algorithm used to analyze the vortex shedding freq
+FIRST CODE: This code is a FFT algorithm used to analyze the vortex shedding freq
+SECOND CODE: This code is GraphPlotter 
