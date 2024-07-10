@@ -8,15 +8,19 @@ def preprocess_image(image):
     """Convert image to numpy array and normalize."""
     return np.array(image) / 255.0
 
-def cross_correlation_fft(window1, window2):
+def cross_correlation_fft(window1, window2,window_size=32):
     """Compute cross-correlation using FFT."""
     f1 = fft.fft2(window1)
     f2 = fft.fft2(window2)
     f2_conj = np.conj(f2)
     cross_corr = fft.ifft2(f1 * f2_conj)
     cross_corr_abs = np.abs(cross_corr) #return the index with the max abs value
-    max_index = np.unravel_index(np.argmax(cross_corr_abs), cross_corr_abs.shape) #return a tuple with the indices of the maximum value in the cross_matrix
-    return max_index
+    width,height = cross_corr_abs.shape
+    peak_x,peak_y = np.unravel_index(np.argmax(cross_corr_abs), cross_corr_abs.shape) #return a tuple with the indices of the maximum value in the cross_matrix
+
+    dx = peak_x - (width // 2)
+    dy = peak_y - (height // 2)
+    return dx ,dy
 
 """Explanation about interrogation windows and their role in PIV."""
 # In Particle Image Velocimetry (PIV), images are divided into smaller subregions called interrogation windows.
@@ -39,7 +43,8 @@ def cross_correlation_fft(window1, window2):
 
 def compute_cross_function(image1, image2, window_size=32, overlap=0.5):
     """Compute velocity vectors from two images."""
-    step = int(window_size * (1 - overlap))
+    #step = int(window_size * (1 - overlap))
+    step=window_size
     height, width = image1.size
     # Convert images to numpy arrays
     image1 = np.array(image1)
@@ -49,11 +54,11 @@ def compute_cross_function(image1, image2, window_size=32, overlap=0.5):
     y_displacement = np.zeros((height, width))
     """Iteration of both window 1 and 2 together with the assumption most of the particals didnt exit the window"""
     for i in range(0, image1.shape[0] - window_size, step):
-        for j in range(0, image1.shape[1] - window_size, step):
+        for j in range( 0, image1.shape[1] - window_size, step):
             # Fix window1 at position (i, j) in image1
             window1 = image1[i:i + window_size, j:j + window_size]
             window2 = image2[i:i + window_size, j:j + window_size]
-            shift_x, shift_y=cross_correlation_fft(window1, window2) #indecies with the max displacment
+            dx, dy=cross_correlation_fft(window1, window2) #indecies with the max displacment
             #x_velocities[i]=i+shift_x #positive velocity is right
             #y_velocities=j+shift_y #positive velocity is down
             # Compute the center position of the current window in the 256x256 grid
@@ -61,8 +66,8 @@ def compute_cross_function(image1, image2, window_size=32, overlap=0.5):
             center_j = j + window_size // 2
             if 0 <= center_i < width and 0 <= center_j < height:
                 # Store the displacement values
-                x_displacement[center_i, center_j] = shift_x - window_size // 2
-                y_displacement[center_i, center_j] = shift_y - window_size // 2
+                x_displacement[center_i, center_j] = dx
+                y_displacement[center_i, center_j] = dy
             #y_displacement[i + window_size // 2, j + window_size // 2] = shift_y - window_size // 2
             #displacement[(i+window_size//2,j+window_size//2)]=(i+shift_x, j+shift_y) #finding displecment in the middle of window position
     return x_displacement,y_displacement
