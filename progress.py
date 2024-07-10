@@ -14,7 +14,7 @@ def cross_correlation_fft(window1, window2):
     f2 = fft.fft2(window2)
     f2_conj = np.conj(f2)
     cross_corr = fft.ifft2(f1 * f2_conj)
-    cross_corr = np.abs(cross_corr).max().item()
+    cross_corr = np.abs(cross_corr).max().item() #return the index with the max value?
     return cross_corr
 
 """Explanation about interrogation windows and their role in PIV."""
@@ -45,23 +45,18 @@ def compute_cross_function(image1, image2, window_size=16, overlap=0.5):
     image1 = np.array(image1)
     image2 = np.array(image2)
     max_index_dictionary = {}
-    # Iterate over possible starting positions for window1 in image1
+    """Iteration of both window 1 and 2 together with the assumption most of the particals didnt exit the window"""
     for i in range(0, image1.shape[0] - window_size, step):
         for j in range(0, image1.shape[1] - window_size, step):
             # Fix window1 at position (i, j) in image1
             window1 = image1[i:i + window_size, j:j + window_size]
+            window2 = image2[k:k + window_size, l:l + window_size]
+            max_index_dictionary[(i,j)]=np.cross_correlation_fft(window1, window2)#indecies with the max displacment
+            cross_corr = cross_correlation_fft(window1, window2)
+            
 
-            # Initialize list to store cross-correlations for window1
-            cross_corrs = {}
 
-            # Iterate over possible starting positions for window2 in image2
-            for k in range(0, image2.shape[0] - window_size, step):
-                for l in range(0, image2.shape[1] - window_size, step):
-                    # Fix window2 at position (k, l) in image2
-                    window2 = image2[k:k + window_size, l:l + window_size]
 
-                    # Compute cross-correlation between window1 and window2
-                    cross_corr = cross_correlation_fft(window1, window2)
 
                     # Store cross-correlation result
                     cross_corrs[(k,l)]=cross_corr
